@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/electronic_documents_data
+    username: root
+    password: Iamamage99
+  jpa:
+    hibernate:
+      use-new-id-generator-mappings: false
+      ddl-auto: update
+    generate-ddl: true
+  application:
+    name: electronic-documents
+  servlet:
+    multipart:
+      maxFileSize: 300MB
+      maxRequestSize: 300MB
+t:
+  app:
+    jwtSecret: secret
+    jwtExpiration: 1000000000
+  sftp:
+    host: 127.0.0.1
+    user: foo
+    password: pass
+    port: 22
+    directory: /electronic-documents/
+    timeout: 600
