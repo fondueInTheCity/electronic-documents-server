@@ -20,4 +20,6 @@ public interface DocumentService {
     void changeDocumentState(Long documentId, ChangeDocumentStateDto dto);
 
     void approveDenyDocument(Long documentId, DocumentAnswerDto answer);
+
+    byte[] download(Long documentId);
 }

@@ -23,6 +23,15 @@ public class Properties {
     @Value("${t.sftp.directory}")
     private String directory;
 
+    @Value("${t.sftp.usersDirectory}")
+    private String usersDirectory;
+
+    @Value("${t.sftp.organizationsDirectory}")
+    private String organizationsDirectory;
+
     @Value("${t.sftp.timeout}")
     private String timeout;
+
+    @Value("${t.app.localStorage}")
+    private String localStorage;
 }

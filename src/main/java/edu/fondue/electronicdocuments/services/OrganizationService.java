@@ -2,10 +2,13 @@ package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
 import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
+import edu.fondue.electronicdocuments.dto.organization.CreateOrganizationRoleDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationCreateDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationViewDto;
+import edu.fondue.electronicdocuments.dto.organization.RenameOrganizationRoleDto;
 import edu.fondue.electronicdocuments.enums.OrganizationType;
 import edu.fondue.electronicdocuments.models.Organization;
+import edu.fondue.electronicdocuments.models.OrganizationRole;
 
 import java.util.List;
 
@@ -24,4 +27,14 @@ public interface OrganizationService {
     List<Organization> getOrganizationsByType(OrganizationType type);
 
     PrivateJoinTokenDto generatePrivateJoinToken(GenerateOrganizationJoinJwtDto jwtDto);
+
+    void createOrganizationRole(CreateOrganizationRoleDto createOrganizationRoleDto);
+
+    void deleteOrganizationRole(Long organizationRoleId);
+
+    void renameOrganizationRole(RenameOrganizationRoleDto renameOrganizationRoleDto);
+
+    void createDefaultRoles(Organization organization);
+
+    List<OrganizationRole> getDefaultOrganizationRoles(Organization organization);
 }

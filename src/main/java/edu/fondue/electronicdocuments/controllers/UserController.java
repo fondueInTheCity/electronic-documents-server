@@ -1,6 +1,7 @@
 package edu.fondue.electronicdocuments.controllers;
 
 import edu.fondue.electronicdocuments.dto.UserDashboardDto;
+import edu.fondue.electronicdocuments.dto.UserRequestsViewDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationInfoDto;
 import edu.fondue.electronicdocuments.services.UserOrganizationService;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +31,10 @@ public class UserController {
     @GetMapping("{username}/organizations")
     public List<OrganizationInfoDto> getList(@PathVariable final String username) {
         return service.getOrganizations(username);
+    }
+
+    @GetMapping("{username}/offers")
+    public UserRequestsViewDto getRequests(@PathVariable final String username) {
+        return service.getRequests(username);
     }
 }

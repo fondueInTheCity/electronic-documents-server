@@ -5,21 +5,26 @@ import edu.fondue.electronicdocuments.configuration.security.JwtProvider;
 import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
 import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
 import edu.fondue.electronicdocuments.dto.UserDashboardDto;
+import edu.fondue.electronicdocuments.dto.UserRequestsViewDto;
 import edu.fondue.electronicdocuments.dto.organization.*;
 import edu.fondue.electronicdocuments.enums.OfferType;
 import edu.fondue.electronicdocuments.models.Offer;
 import edu.fondue.electronicdocuments.models.Organization;
 import edu.fondue.electronicdocuments.models.User;
+import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static edu.fondue.electronicdocuments.enums.OrganizationType.PUBLIC;
-import static java.util.stream.Collectors.toList;
+import static java.lang.String.format;
+import static java.util.stream.Collectors.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,8 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     private final JwtProvider jwtProvider;
 
+    private final Properties properties;
+
 
     @Override
     public OrganizationViewDto getOrganizationView(final Long id) {
@@ -47,15 +54,21 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         final Organization organization = OrganizationCreateDto.toOrganization(organizationCreateDto);
         final User owner = userService.getUser(organizationCreateDto.getOwnerUsername());
 
-        storageService.createFolder(organization.getName());
+        storageService.createFolder(format("%s/%s", properties.getOrganizationsDirectory(), organization.getName()));
 
         organization.setOwner(owner);
         organization.getUsers().add(owner);
-
         owner.getOrganizations().add(organization);
 
         organizationService.save(organization);
+
+        organizationService.createDefaultRoles(organization);
+
+        owner.setOrganizationRoles(organization.getOrganizationRoles());
         userService.save(owner);
+
+        final User user = userService.getUser(owner.getUsername());
+        storageService.createFolder(format("organizations/%s/%d", organization.getName(), user.getId()));
     }
 
     @Override
@@ -97,8 +110,16 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     public OrganizationMemberViewDto getOrganizationMember(final Long organizationId, final Long userId) {
-        return OrganizationMemberViewDto.fromUser(organizationService.get(organizationId).getUsers()
-                .get(userId.intValue()));
+
+        final User member = userService.find(userId);
+        final OrganizationMemberViewDto organizationMemberViewDto = OrganizationMemberViewDto.fromUser(member);
+        final List<OrganizationRoleInfoDto> roles = member.getOrganizationRoles().stream()
+                .filter(organizationRole -> organizationRole.getOrganization().getId().equals(organizationId))
+                .map(OrganizationRoleInfoDto::fromOrganizationRole)
+                .collect(toList());
+        organizationMemberViewDto.setRoles(roles);
+
+        return organizationMemberViewDto;
     }
 
     @Override
@@ -152,10 +173,56 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
     }
 
     @Override
-    public List<OrganizationOfferDto> getOffers(final Long organizationId) {
-        return organizationService.get(organizationId).getOffers().stream()
-                .map(OrganizationOfferDto::fromOffer)
+    public List<OrganizationRoleInfoDto> getOrganizationRoles(final Long organizationId) {
+        return organizationService.get(organizationId).getOrganizationRoles().stream()
+                .map(OrganizationRoleInfoDto::fromOrganizationRole)
                 .collect(toList());
+    }
+
+    @Override
+    public void createOrganizationRole(final CreateOrganizationRoleDto createOrganizationRoleDto) {
+        organizationService.createOrganizationRole(createOrganizationRoleDto);
+    }
+
+    @Override
+    public void deleteOrganizationRole(final Long organizationRoleId) {
+        organizationService.deleteOrganizationRole(organizationRoleId);
+    }
+
+    @Override
+    public void renameOrganizationRole(final RenameOrganizationRoleDto renameOrganizationRoleDto) {
+        organizationService.renameOrganizationRole(renameOrganizationRoleDto);
+    }
+
+    @Override
+    public void createOrganizationRequest(final CreateOrganizationRequest createOrganizationRequest) {
+        final User user = userService.getUser(createOrganizationRequest.getUsername());
+        final Organization organization = organizationService.get(createOrganizationRequest.getOrganizationId());
+        final Offer offer = offerService.createOffer(user, organization, OfferType.FROM_ORGANIZATION);
+
+        offerService.save(offer);
+
+        user.getOffers().add(offer);
+        userService.save(user);
+
+        organization.getOffers().add(offer);
+        organizationService.save(organization);
+    }
+
+    @Override
+    public UserRequestsViewDto getRequests(final String username) {
+        var map = userService.getUser(username).getOffers().stream()
+                .map(OrganizationOfferDto::fromOffer)
+                .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
+        return UserRequestsViewDto.createFormMap(map);
+    }
+
+    @Override
+    public OrganizationRequestsView getOffers(final Long organizationId) {
+        var map = organizationService.get(organizationId).getOffers().stream()
+                .map(OrganizationOfferDto::fromOffer)
+                .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
+        return OrganizationRequestsView.createFormMap(map);
     }
 
     @Override
@@ -167,12 +234,16 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         if (organizationAnswerOfferDto.isAnswer()) {
             organization.getUsers().add(user);
             user.getOrganizations().add(organization);
+            storageService.createFolder(format("organizations/%s/%d", organization.getName(), user.getId()));
+
+            user.setOrganizationRoles(organizationService.getDefaultOrganizationRoles(organization));
         }
 
         organization.getOffers().remove(offer);
         user.getOffers().remove(offer);
 
         organizationService.save(organization);
+
         userService.save(user);
 
         offerService.delete(offer);
@@ -181,7 +252,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
     @Override
     public List<OrganizationInfoDto> getPublicOrganizations() {
         final UserPrinciple userPrinciple =
-                (UserPrinciple)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final Long currentId = userPrinciple.getId();
 
         return organizationService.getOrganizationsByType(PUBLIC).stream()

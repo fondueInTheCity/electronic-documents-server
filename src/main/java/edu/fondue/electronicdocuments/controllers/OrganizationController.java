@@ -34,7 +34,7 @@ public class OrganizationController {
     }
 
     @GetMapping("{organizationId}/members/{userId}")
-    public OrganizationMemberViewDto getOrganizationMembers(@PathVariable final Long organizationId,
+    public OrganizationMemberViewDto getOrganizationMember(@PathVariable final Long organizationId,
                                                             @PathVariable final Long userId) {
         return service.getOrganizationMember(organizationId, userId);
     }
@@ -51,13 +51,12 @@ public class OrganizationController {
     }
 
     @GetMapping("{organizationId}/offers")
-    public List<OrganizationOfferDto> getOffers(@PathVariable final Long organizationId) {
+    public OrganizationRequestsView getOffers(@PathVariable final Long organizationId) {
         return service.getOffers(organizationId);
     }
 
-    @PutMapping("{organizationId}/offers")
-    public void answeredOffer(@PathVariable final Long organizationId,
-                              @RequestBody final OrganizationAnswerOfferDto organizationAnswerOfferDto) {
+    @PutMapping("offers")
+    public void answeredOffer(@RequestBody final OrganizationAnswerOfferDto organizationAnswerOfferDto) {
         service.answeredOffer(organizationAnswerOfferDto);
     }
 
@@ -79,5 +78,30 @@ public class OrganizationController {
     @PostMapping("{organizationId}/user/{userId}/request")
     public void createRequest(@PathVariable final Long organizationId, @PathVariable final Long userId) {
         service.createRequest(organizationId, userId);
+    }
+
+    @GetMapping("{organizationId}/roles")
+    public List<OrganizationRoleInfoDto> getOrganizationRoles(@PathVariable final Long organizationId) {
+        return service.getOrganizationRoles(organizationId);
+    }
+
+    @PostMapping("roles/create")
+    public void creteOrganizationRole(@RequestBody final CreateOrganizationRoleDto createOrganizationRoleDto) {
+        service.createOrganizationRole(createOrganizationRoleDto);
+    }
+
+    @DeleteMapping("roles/{organizationRoleId}")
+    public void deleteOrganizationRole(@PathVariable final Long organizationRoleId) {
+        service.deleteOrganizationRole(organizationRoleId);
+    }
+
+    @PutMapping("roles/rename")
+    public void renameOrganizationRole(@RequestBody final RenameOrganizationRoleDto renameOrganizationRoleDto) {
+        service.renameOrganizationRole(renameOrganizationRoleDto);
+    }
+
+    @PostMapping("organization-request/create")
+    public void createOrganizationRequest(@RequestBody CreateOrganizationRequest createOrganizationRequest) {
+        service.createOrganizationRequest(createOrganizationRequest);
     }
 }

@@ -16,9 +16,12 @@ public class OrganizationOfferDto {
 
     private String ownerUsername;
 
+    private String type;
+
     static public OrganizationOfferDto fromOffer(final Offer offer) {
         return OrganizationOfferDto.builder()
                 .id(offer.getId())
+                .type(offer.getType().name())
                 .ownerUsername(offer.getUser().getUsername()).build();
     }
 }

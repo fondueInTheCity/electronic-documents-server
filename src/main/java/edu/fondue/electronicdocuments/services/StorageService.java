@@ -6,7 +6,7 @@ public interface StorageService {
 
     void upload(String path, MultipartFile file);
 
-    String download(String path);
+    byte[] download(String path);
 
     void createFolder(String path);
 }

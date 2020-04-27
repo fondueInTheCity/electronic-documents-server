@@ -18,10 +18,13 @@ t:
   app:
     jwtSecret: secret
     jwtExpiration: 1000000000
+    localStorage: C:\storage
   sftp:
     host: 127.0.0.1
     user: foo
     password: pass
     port: 22
-    directory: /electronic-documents/
+    directory: /electronic-documents
     timeout: 600
+    usersDirectory: /users
+    organizationsDirectory: /organizations

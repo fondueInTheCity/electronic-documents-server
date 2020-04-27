@@ -52,4 +52,9 @@ public class DocumentController {
                                     @RequestBody final DocumentAnswerDto answer) {
         service.approveDenyDocument(documentId, answer);
     }
+
+    @PostMapping("{documentId}/download")
+    public byte[] renameOrganizationRole(@PathVariable Long documentId) {
+        return service.download(documentId);
+    }
 }

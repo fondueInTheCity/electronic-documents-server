@@ -60,4 +60,9 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
     public void approveDenyDocument(final Long documentId, final DocumentAnswerDto answer) {
         documentService.approveDenyDocument(documentId, answer);
     }
+
+    @Override
+    public byte[] download(final Long documentId) {
+        return documentService.download(documentId);
+    }
 }

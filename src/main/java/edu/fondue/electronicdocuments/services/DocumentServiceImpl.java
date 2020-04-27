@@ -6,6 +6,7 @@ import edu.fondue.electronicdocuments.dto.document.DocumentInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.models.Document;
 import edu.fondue.electronicdocuments.repositories.DocumentRepository;
+import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,15 +29,19 @@ public class DocumentServiceImpl implements DocumentService {
 
     private final DocumentRepository repository;
 
+    private final Properties properties;
+
     @Override
     public void uploadOrganizationFile(final String organizationName, final Long organizationId, final Long userId,
                                        final MultipartFile file) {
-        storageService.upload(organizationName, file);
+        final String uploadPath = format("%s/%s/%d", properties.getOrganizationsDirectory(), organizationName, userId);
+
+        storageService.upload(uploadPath, file);
 
         final Document document = Document.builder()
                 .organizationId(organizationId)
                 .ownerId(userId)
-                .path(format("%s/%s", organizationName, file.getName()))
+                .path(format("%s/%s", uploadPath, file.getOriginalFilename()))
                 .name(file.getOriginalFilename())
                 .state(HEAP).build();
 
@@ -84,5 +89,12 @@ public class DocumentServiceImpl implements DocumentService {
         document.setAnswer(answer.getAnswer());
 
         repository.save(document);
+    }
+
+    @Override
+    public byte[] download(final Long documentId) {
+        final Document document = repository.getOne(documentId);
+        final String path = format("%s/%s", document.getPath(), document.getName());
+        return storageService.download(path);
     }
 }

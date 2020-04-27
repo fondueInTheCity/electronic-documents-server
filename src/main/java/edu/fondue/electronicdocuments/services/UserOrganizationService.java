@@ -3,6 +3,7 @@ package edu.fondue.electronicdocuments.services;
 import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
 import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
 import edu.fondue.electronicdocuments.dto.UserDashboardDto;
+import edu.fondue.electronicdocuments.dto.UserRequestsViewDto;
 import edu.fondue.electronicdocuments.dto.organization.*;
 import edu.fondue.electronicdocuments.models.User;
 
@@ -34,7 +35,7 @@ public interface UserOrganizationService {
 
     void updateOrganizationSettings(OrganizationSettingsDto organizationSettingsDto);
 
-    List<OrganizationOfferDto> getOffers(Long organizationId);
+    OrganizationRequestsView getOffers(Long organizationId);
 
     void answeredOffer(OrganizationAnswerOfferDto organizationAnswerOfferDto);
 
@@ -47,4 +48,16 @@ public interface UserOrganizationService {
     void privateJoin(PrivateJoinTokenDto privateJoinTokenDto);
 
     void createRequest(Long organizationId, Long userId);
+
+    List<OrganizationRoleInfoDto> getOrganizationRoles(Long organizationId);
+
+    void createOrganizationRole(CreateOrganizationRoleDto createOrganizationRoleDto);
+
+    void deleteOrganizationRole(Long organizationRoleId);
+
+    void renameOrganizationRole(RenameOrganizationRoleDto renameOrganizationRoleDto);
+
+    void createOrganizationRequest(CreateOrganizationRequest createOrganizationRequest);
+
+    UserRequestsViewDto getRequests(String username);
 }

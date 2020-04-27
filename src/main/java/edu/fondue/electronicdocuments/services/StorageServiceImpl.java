@@ -37,12 +37,12 @@ public class StorageServiceImpl implements StorageService {
 
     @SneakyThrows
     @Override
-    public String download(final String path) {
+    public byte[] download(final String path) {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         session.read(format("%s%s", properties.getDirectory(), path), outputStream);
-        return new String(outputStream.toByteArray());
+        return outputStream.toByteArray();
     }
 
     @SneakyThrows
@@ -50,6 +50,6 @@ public class StorageServiceImpl implements StorageService {
     public void createFolder(final String path) {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
 
-        session.mkdir(format("%s%s", properties.getDirectory(), path));
+        session.mkdir(format("%s/%s", properties.getDirectory(), path));
     }
 }

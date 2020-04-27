@@ -6,6 +6,7 @@ import edu.fondue.electronicdocuments.dto.JwtResponseDto;
 import edu.fondue.electronicdocuments.dto.SignInDto;
 import edu.fondue.electronicdocuments.dto.SignUpDto;
 import edu.fondue.electronicdocuments.models.User;
+import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+
+import static java.lang.String.format;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,10 @@ public class AuthServiceImpl implements AuthService {
     private final UserService userService;
 
     private final PasswordEncoder encoder;
+
+    private final Properties properties;
+
+    private final StorageService storageService;
 
     @Override
     public ResponseEntity<?> authenticate(final SignInDto request) {
@@ -64,6 +71,8 @@ public class AuthServiceImpl implements AuthService {
                 .roles(new HashSet<>()).build();
 
         userService.save(user);
+
+        storageService.createFolder(format("%s/%d", properties.getUsersDirectory(), user.getId()));
 
         return ResponseEntity.ok().body("User registered successfully!");
     }

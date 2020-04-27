@@ -3,6 +3,7 @@ package edu.fondue.electronicdocuments.models;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,4 +25,7 @@ public class OrganizationRole {
     @ManyToOne
     @JoinColumn(name = "organization_id", nullable = false)
     private Organization organization;
+
+    @ManyToMany(mappedBy = "organizationRoles")
+    private List<User> users;
 }

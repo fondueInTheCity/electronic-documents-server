@@ -80,4 +80,10 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Offer> offers;
+
+    @ManyToMany
+    @JoinTable(name = "users_organizations_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "organization_role_id"))
+    private List<OrganizationRole> organizationRoles;
 }
