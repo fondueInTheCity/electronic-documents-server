@@ -2,14 +2,12 @@ package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.configuration.UserPrinciple;
 import edu.fondue.electronicdocuments.configuration.security.JwtProvider;
-import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
-import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
-import edu.fondue.electronicdocuments.dto.UserDashboardDto;
-import edu.fondue.electronicdocuments.dto.UserRequestsViewDto;
+import edu.fondue.electronicdocuments.dto.*;
 import edu.fondue.electronicdocuments.dto.organization.*;
 import edu.fondue.electronicdocuments.enums.OfferType;
 import edu.fondue.electronicdocuments.models.Offer;
 import edu.fondue.electronicdocuments.models.Organization;
+import edu.fondue.electronicdocuments.models.OrganizationRole;
 import edu.fondue.electronicdocuments.models.User;
 import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +48,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     @Transactional
-    public void createOrganization(final OrganizationCreateDto organizationCreateDto) {
+    public Long createOrganization(final OrganizationCreateDto organizationCreateDto) {
         final Organization organization = OrganizationCreateDto.toOrganization(organizationCreateDto);
         final User owner = userService.getUser(organizationCreateDto.getOwnerUsername());
 
@@ -60,7 +58,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         organization.getUsers().add(owner);
         owner.getOrganizations().add(organization);
 
-        organizationService.save(organization);
+        final Long newOrgId = organizationService.save(organization);
 
         organizationService.createDefaultRoles(organization);
 
@@ -69,6 +67,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
         final User user = userService.getUser(owner.getUsername());
         storageService.createFolder(format("organizations/%s/%d", organization.getName(), user.getId()));
+        return newOrgId;
     }
 
     @Override
@@ -212,15 +211,56 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
     @Override
     public UserRequestsViewDto getRequests(final String username) {
         var map = userService.getUser(username).getOffers().stream()
-                .map(OrganizationOfferDto::fromOffer)
+                .map(offer -> OrganizationOfferDto.fromOffer(offer, true))
                 .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
         return UserRequestsViewDto.createFormMap(map);
     }
 
     @Override
+    public void checkPermissions(final Long organizationId) throws Exception {
+        final UserPrinciple userPrinciple =
+                (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        final User user = userService.find(userPrinciple.getId());
+        final boolean admin = user.getOrganizationRoles().stream()
+                .filter(role -> role.getOrganization().getId().equals(organizationId))
+                .anyMatch(role -> role.getRoleName().equals("Admin"));
+
+        if (!admin) {
+            throw new Exception("NO");
+        }
+    }
+
+    @Override
+    public void addRole(final Long organizationId, final Long memberId, final AddRoleDto addRoleDto) {
+        final User user = userService.find(memberId);
+        final Organization organization = organizationService.get(organizationId);
+        final OrganizationRole organizationRole = organization.getOrganizationRoles().stream()
+                .filter(role -> role.getId().equals(addRoleDto.getRole()))
+                .findAny().get();
+
+        user.getOrganizationRoles().add(organizationRole);
+        userService.save(user);
+    }
+
+    @Override
+    public void deleteRole(final Long organizationId, final Long memberId, final Long id) {
+        final User user = userService.find(memberId);
+        final Organization organization = organizationService.get(organizationId);
+
+        user.getOrganizationRoles().removeIf(role -> role.getId().equals(id));
+        organization.getOrganizationRoles().removeIf(role -> role.getId().equals(id));
+
+        userService.save(user);
+        organizationService.save(organization);
+
+        organizationService.deleteOrganizationRole(id);
+    }
+
+    @Override
     public OrganizationRequestsView getOffers(final Long organizationId) {
         var map = organizationService.get(organizationId).getOffers().stream()
-                .map(OrganizationOfferDto::fromOffer)
+                .map(offer -> OrganizationOfferDto.fromOffer(offer, false))
                 .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
         return OrganizationRequestsView.createFormMap(map);
     }
@@ -254,16 +294,10 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         final UserPrinciple userPrinciple =
                 (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         final Long currentId = userPrinciple.getId();
+        final User user = userService.find(currentId);
 
         return organizationService.getOrganizationsByType(PUBLIC).stream()
-                .filter(organization -> organization.getUsers().stream()
-                        .map(User::getId)
-                        .noneMatch(currentId::equals))
-                .filter(organization -> organization.getOffers().stream()
-                        .map(Offer::getUser)
-                        .map(User::getId)
-                        .noneMatch(currentId::equals))
-                .map(OrganizationInfoDto::fromOrganization)
+                .map(organization -> OrganizationInfoDto.fromOrganization(organization, user))
                 .collect(toList());
     }
 

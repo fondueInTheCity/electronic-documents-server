@@ -47,8 +47,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<OrganizationInfoDto> getOrganizations(final String username) {
+        final User user = repository.findByUsername(username);
         return repository.findByUsername(username).getOrganizations().stream()
-                .map(OrganizationInfoDto::fromOrganization)
+                .map(organization -> OrganizationInfoDto.fromOrganization(organization, user))
                 .collect(toList());
     }
 

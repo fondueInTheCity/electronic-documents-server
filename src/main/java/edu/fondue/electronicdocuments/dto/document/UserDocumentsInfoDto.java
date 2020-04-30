@@ -11,5 +11,13 @@ import java.util.List;
 @AllArgsConstructor
 public class UserDocumentsInfoDto {
 
-    private List<DocumentInfoDto> documentsInfo;
+    private List<DocumentInfoDto> heapDocuments;
+
+    private List<DocumentInfoDto> waitingDocuments;
+
+    private List<DocumentInfoDto> progressDocuments;
+
+    private List<DocumentInfoDto> answeredDocuments;
+
+    private List<DocumentInfoDto> joinToMe;
 }

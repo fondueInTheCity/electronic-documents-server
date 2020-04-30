@@ -1,9 +1,6 @@
 package edu.fondue.electronicdocuments.services;
 
-import edu.fondue.electronicdocuments.dto.document.ChangeDocumentStateDto;
-import edu.fondue.electronicdocuments.dto.document.DocumentAnswerDto;
-import edu.fondue.electronicdocuments.dto.document.OrganizationDocumentViewDto;
-import edu.fondue.electronicdocuments.dto.document.UserDocumentsInfoDto;
+import edu.fondue.electronicdocuments.dto.document.*;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,4 +19,18 @@ public interface OrganizationDocumentsService {
     void approveDenyDocument(Long documentId, DocumentAnswerDto answer);
 
     byte[] download(Long documentId);
+
+    HeapDocumentViewDto getHeapDocument(Long documentId);
+
+    void approveHeapDocument(HeapDocumentViewDto heapDocumentViewDto);
+
+    WaitingDocumentViewDto getWaitingDocument(Long documentId);
+
+    JoinToMeDocumentViewDto getJoinToMeDocument(Long documentId);
+
+    void downloadDocumentForCheck(Long documentId);
+
+    void answerDocument(Long documentId, DocumentAnswerDto answer);
+
+    String getMediaType(Long documentId);
 }

@@ -2,6 +2,7 @@ package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.dto.document.ChangeDocumentStateDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentAnswerDto;
+import edu.fondue.electronicdocuments.dto.document.HeapDocumentViewDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.models.Document;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,4 +23,8 @@ public interface DocumentService {
     void approveDenyDocument(Long documentId, DocumentAnswerDto answer);
 
     byte[] download(Long documentId);
+
+    HeapDocumentViewDto getHeapDocument(Long documentId);
+
+    void save(Document document);
 }

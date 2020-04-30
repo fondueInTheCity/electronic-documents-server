@@ -45,8 +45,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public void save(final Organization organization) {
-        repository.save(organization);
+    public Long save(final Organization organization) {
+        final Organization newOrganization = repository.save(organization);
+        return newOrganization.getId();
     }
 
     @Override

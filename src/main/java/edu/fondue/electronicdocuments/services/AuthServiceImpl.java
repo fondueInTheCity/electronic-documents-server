@@ -5,6 +5,7 @@ import edu.fondue.electronicdocuments.configuration.security.JwtProvider;
 import edu.fondue.electronicdocuments.dto.JwtResponseDto;
 import edu.fondue.electronicdocuments.dto.SignInDto;
 import edu.fondue.electronicdocuments.dto.SignUpDto;
+import edu.fondue.electronicdocuments.models.Organization;
 import edu.fondue.electronicdocuments.models.User;
 import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +18,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -44,10 +47,16 @@ public class AuthServiceImpl implements AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        final User user = userService.getUser(request.getUsername());
+        final List<Long> list = user.getOwnerOrganization().stream()
+                .map(Organization::getId)
+                .collect(toList());
+
         final String jwt = jwtProvider.generateJwtToken(authentication);
         return ResponseEntity.ok(JwtResponseDto.builder()
                 .id(((UserPrinciple)authentication.getPrincipal()).getId())
                 .token(jwt)
+                .organizationsId(list)
                 .username(request.getUsername()).build());
     }
 

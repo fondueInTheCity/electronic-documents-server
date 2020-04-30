@@ -18,7 +18,7 @@ public interface OrganizationService {
 
     void create(OrganizationCreateDto organizationCreateDto);
 
-    void save(Organization organization);
+    Long save(Organization organization);
 
     Organization get(Long id);
 

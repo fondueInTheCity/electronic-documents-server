@@ -3,6 +3,7 @@ package edu.fondue.electronicdocuments.services;
 import edu.fondue.electronicdocuments.dto.document.ChangeDocumentStateDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentAnswerDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentInfoDto;
+import edu.fondue.electronicdocuments.dto.document.HeapDocumentViewDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.models.Document;
 import edu.fondue.electronicdocuments.repositories.DocumentRepository;
@@ -28,6 +29,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final StorageService storageService;
 
     private final DocumentRepository repository;
+
+    private final OrganizationRoleService organizationRoleService;
 
     private final Properties properties;
 
@@ -94,7 +97,16 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public byte[] download(final Long documentId) {
         final Document document = repository.getOne(documentId);
-        final String path = format("%s/%s", document.getPath(), document.getName());
-        return storageService.download(path);
+        return storageService.download(document.getPath());
+    }
+
+    @Override
+    public HeapDocumentViewDto getHeapDocument(final Long documentId) {
+        return HeapDocumentViewDto.fromDocument(repository.getOne(documentId));
+    }
+
+    @Override
+    public void save(final Document document) {
+        repository.save(document);
     }
 }

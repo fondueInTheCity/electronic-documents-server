@@ -37,4 +37,9 @@ public class UserController {
     public UserRequestsViewDto getRequests(@PathVariable final String username) {
         return service.getRequests(username);
     }
+
+    @PostMapping("permissions/{organizationId}")
+    public void checkPermissions(@PathVariable Long organizationId) throws Exception {
+        service.checkPermissions(organizationId);
+    }
 }

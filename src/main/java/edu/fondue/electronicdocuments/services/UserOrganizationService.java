@@ -1,9 +1,6 @@
 package edu.fondue.electronicdocuments.services;
 
-import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
-import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
-import edu.fondue.electronicdocuments.dto.UserDashboardDto;
-import edu.fondue.electronicdocuments.dto.UserRequestsViewDto;
+import edu.fondue.electronicdocuments.dto.*;
 import edu.fondue.electronicdocuments.dto.organization.*;
 import edu.fondue.electronicdocuments.models.User;
 
@@ -13,7 +10,7 @@ public interface UserOrganizationService {
 
     OrganizationViewDto getOrganizationView(Long id);
 
-    void createOrganization(OrganizationCreateDto organizationCreateDto);
+    Long createOrganization(OrganizationCreateDto organizationCreateDto);
 
     boolean existsUserByUsername(String username);
 
@@ -60,4 +57,10 @@ public interface UserOrganizationService {
     void createOrganizationRequest(CreateOrganizationRequest createOrganizationRequest);
 
     UserRequestsViewDto getRequests(String username);
+
+    void checkPermissions(Long organizationId) throws Exception;
+
+    void addRole(Long organizationId, Long memberId, AddRoleDto addRoleDto);
+
+    void deleteRole(Long organizationId, Long memberId, Long id);
 }

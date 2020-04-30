@@ -1,5 +1,6 @@
 package edu.fondue.electronicdocuments.controllers;
 
+import edu.fondue.electronicdocuments.dto.AddRoleDto;
 import edu.fondue.electronicdocuments.dto.GenerateOrganizationJoinJwtDto;
 import edu.fondue.electronicdocuments.dto.PrivateJoinTokenDto;
 import edu.fondue.electronicdocuments.dto.organization.*;
@@ -24,8 +25,8 @@ public class OrganizationController {
     }
 
     @PostMapping
-    public void create(@RequestBody OrganizationCreateDto organizationCreateDto) {
-        service.createOrganization(organizationCreateDto);
+    public Long create(@RequestBody OrganizationCreateDto organizationCreateDto) {
+        return service.createOrganization(organizationCreateDto);
     }
 
     @GetMapping("{organizationId}/members")
@@ -103,5 +104,19 @@ public class OrganizationController {
     @PostMapping("organization-request/create")
     public void createOrganizationRequest(@RequestBody CreateOrganizationRequest createOrganizationRequest) {
         service.createOrganizationRequest(createOrganizationRequest);
+    }
+
+    @PostMapping("{organizationId}/members/{memberId}/roles")
+    public void addRole(@PathVariable final Long organizationId,
+                        @PathVariable final Long memberId,
+                        @RequestBody final AddRoleDto addRoleDto) {
+        service.addRole(organizationId, memberId, addRoleDto);
+    }
+
+    @DeleteMapping("{organizationId}/members/{memberId}/roles/{id}")
+    public void addRole(@PathVariable final Long organizationId,
+                        @PathVariable final Long memberId,
+                        @PathVariable final Long id) {
+        service.deleteRole(organizationId, memberId, id);
     }
 }

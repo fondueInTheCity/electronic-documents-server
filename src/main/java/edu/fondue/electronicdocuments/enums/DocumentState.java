@@ -4,5 +4,6 @@ public enum DocumentState {
     HEAP,
     WAITING,
     PENDING,
-    ANSWERED
+    ANSWERED,
+    JOIN_TO_ME
 }

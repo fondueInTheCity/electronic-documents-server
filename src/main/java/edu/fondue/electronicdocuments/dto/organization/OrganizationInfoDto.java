@@ -1,6 +1,7 @@
 package edu.fondue.electronicdocuments.dto.organization;
 
 import edu.fondue.electronicdocuments.models.Organization;
+import edu.fondue.electronicdocuments.models.User;
 import lombok.*;
 
 @Getter
@@ -18,11 +19,14 @@ public class OrganizationInfoDto {
 
     private String type;
 
-    public static OrganizationInfoDto fromOrganization(final Organization organization) {
+    private Boolean subscribe;
+
+    public static OrganizationInfoDto fromOrganization(final Organization organization, final User user) {
         return OrganizationInfoDto.builder()
                 .id(organization.getId())
                 .name(organization.getName())
                 .ownerUsername(organization.getOwner().getUsername())
+                .subscribe(organization.getUsers().contains(user))
                 .type(organization.getOrganizationType().name()).build();
     }
 }
