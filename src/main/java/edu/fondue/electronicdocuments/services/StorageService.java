@@ -9,4 +9,6 @@ public interface StorageService {
     byte[] download(String path);
 
     void createFolder(String path);
+
+    void renameFile(String pathFrom, String pathTo);
 }

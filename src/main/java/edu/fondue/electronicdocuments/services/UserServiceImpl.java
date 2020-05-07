@@ -1,5 +1,6 @@
 package edu.fondue.electronicdocuments.services;
 
+import edu.fondue.electronicdocuments.configuration.security.JwtProvider;
 import edu.fondue.electronicdocuments.dto.UserDashboardDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationInfoDto;
 import edu.fondue.electronicdocuments.models.User;
@@ -16,6 +17,8 @@ import static java.util.stream.Collectors.toList;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
+
+    private final JwtProvider jwtProvider;
 
     @Override
     public boolean existsByUsername(final String username) {
@@ -43,6 +46,8 @@ public class UserServiceImpl implements UserService {
         UserDashboardDto.updateUser(user, userDashboardDto);
 
         repository.save(user);
+
+//        return jwtProvider.generateJwtToken(userDashboardDto.getUsername());
     }
 
     @Override

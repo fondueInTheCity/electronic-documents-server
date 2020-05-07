@@ -1,9 +1,12 @@
 package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.configuration.UserPrinciple;
+import edu.fondue.electronicdocuments.dto.ProgressDocumentAnswerDto;
 import edu.fondue.electronicdocuments.dto.document.*;
+import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationRoleInfoDto;
+import edu.fondue.electronicdocuments.enums.DocumentState;
 import edu.fondue.electronicdocuments.models.*;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -21,6 +24,7 @@ import java.util.Map;
 
 import static edu.fondue.electronicdocuments.enums.DocumentAnswer.*;
 import static edu.fondue.electronicdocuments.enums.DocumentState.*;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.*;
 
 @Service
@@ -33,20 +37,31 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
 
     private final ProgressDocumentsResponseService progressDocumentsResponseService;
 
+    private final UserService userService;
+
+    private final StorageService storageService;
+
     @Override
     @Transactional
     public void uploadOrganizationFile(final Long organizationId, final Long userId,
                                        final MultipartFile file) {
-        final Organization organization = organizationService.get(organizationId);
-
-        documentService.uploadOrganizationFile(organization.getName(), organizationId, userId,
-                file);
+        documentService.uploadOrganizationFile(organizationId, userId, file);
     }
 
     @Override
     @Transactional
-    public OrganizationDocumentsInfoDto getUserOrganizationDocuments(final Long organizationId, final Long userId) {
-        return documentService.getUserOrganizationDocuments(organizationId, userId);
+    public MyOrganizationDocumentsInfoDto getUserOrganizationDocuments(final Long organizationId, final Long userId) {
+        final List<DocumentInfoDto> joinToMe = progressDocumentsResponseService.getAllByUserId(userId).stream()
+                .filter(item -> item.getAnswer().equals(NOT_ANSWER))
+                .map(ProgressDocumentsResponse::getDocumentId)
+                .map(documentService::get)
+                .map(DocumentInfoDto::fromDocument)
+                .collect(toList());
+
+        joinToMe.forEach(documentInfo -> documentInfo.setDocumentState(JOIN_TO_ME.name()));
+        final MyOrganizationDocumentsInfoDto dto = documentService.getUserOrganizationDocuments(organizationId, userId);
+        dto.setJoinToMeDocuments(joinToMe);
+        return dto;
     }
 
     @Override
@@ -63,6 +78,7 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
                 .collect(groupingBy(DocumentInfoDto::getDocumentState, HashMap::new, toCollection(ArrayList::new)));
 
         final List<DocumentInfoDto> joinToMe = progressDocumentsResponseService.getAllByUserId(userId).stream()
+                .filter(item -> item.getAnswer().equals(NOT_ANSWER))
                 .map(ProgressDocumentsResponse::getDocumentId)
                 .map(documentService::get)
                 .map(DocumentInfoDto::fromDocument)
@@ -75,7 +91,7 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
                 .waitingDocuments(map.get(WAITING.name()))
                 .progressDocuments(map.get(PENDING.name()))
                 .answeredDocuments(map.get(ANSWERED.name()))
-                .joinToMe(joinToMe).build();
+                .joinToMeDocuments(joinToMe).build();
     }
 
     @Override
@@ -90,6 +106,15 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
 
     @Override
     public byte[] download(final Long documentId) {
+        final boolean waiting = progressDocumentsResponseService.getAllByDocumentId(documentId).stream()
+                .allMatch(item -> item.getAnswer().equals(NOT_ANSWER));
+        final Document document = documentService.get(documentId);
+
+        if (waiting && document.getState().equals(WAITING)) {
+            document.setState(PENDING);
+            documentService.save(document);
+        }
+
         return documentService.download(documentId);
     }
 
@@ -107,12 +132,16 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
 
     @Override
     public void approveHeapDocument(final HeapDocumentViewDto heapDocumentViewDto) {
+        final UserPrinciple userPrinciple =
+                (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        final long currentId = userPrinciple.getId();
         final Organization organization = organizationService.get(heapDocumentViewDto.getOrganizationId());
         final List<Long> usersId = organization.getUsers().stream()
                 .filter(user -> user.getOrganizationRoles().stream()
                         .map(OrganizationRole::getId)
                         .anyMatch(roleId -> heapDocumentViewDto.getRoles().contains(roleId)))
                 .map(User::getId)
+                .filter(id -> !id.equals(currentId))
                 .collect(toList());
 
         usersId.forEach(userId -> progressDocumentsResponseService
@@ -120,6 +149,12 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
 
         final Document document = documentService.get(heapDocumentViewDto.getId());
         document.setState(WAITING);
+
+        final String pathTo = format("electronic-documents/organizations/%d/%d/%s",
+                heapDocumentViewDto.getOrganizationId(), currentId, heapDocumentViewDto.getName());
+        storageService.renameFile(format("electronic-documents%s", document.getPath()), pathTo);
+        document.setPath(pathTo);
+        document.setName(heapDocumentViewDto.getName());
         documentService.save(document);
     }
 
@@ -182,5 +217,58 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
     public String getMediaType(final Long documentId) {
         final Document document = documentService.get(documentId);
         return Files.probeContentType(new File(document.getName()).toPath());
+    }
+
+    @Override
+    public PendingDocumentViewDto getPendingDocument(final Long documentId) {
+        final Document document = documentService.get(documentId);
+        final List<ProgressDocumentAnswerDto> list = progressDocumentsResponseService.getAllByDocumentId(documentId)
+                .stream()
+                .map(ProgressDocumentAnswerDto::fromProgressDocumentsResponse)
+                .collect(toList());
+        list.forEach(item -> item.setUsername(userService.find(item.getUserId()).getUsername()));
+
+        final Organization organization = organizationService.get(document.getOrganizationId());
+        final PendingDocumentViewDto pendingDocumentViewDto = PendingDocumentViewDto.fromDocument(document);
+
+        pendingDocumentViewDto.setOrganizationName(organization.getName());
+        pendingDocumentViewDto.setAnswers(list);
+        return pendingDocumentViewDto;
+    }
+
+    @Override
+    public AnsweredDocumentViewDto getAnsweredDocument(final Long documentId) {
+        final Document document = documentService.get(documentId);
+        final AnsweredDocumentViewDto answeredDocumentViewDto = AnsweredDocumentViewDto.fromDocument(document);
+        final Organization organization = organizationService.get(document.getOrganizationId());
+
+        answeredDocumentViewDto.setOrganizationName(organization.getName());
+
+        answeredDocumentViewDto.setJoins(progressDocumentsResponseService.getAllByDocumentId(documentId).stream()
+                .map(ProgressDocumentsResponse::getUserId)
+                .map(userId -> userService.find(userId).getUsername())
+                .collect(toList()));
+        return answeredDocumentViewDto;
+    }
+
+    @Override
+    public OrganizationDocumentsInfoDto getOrganizationDocumentsInfo(final Long organizationId) {
+        final List<DocumentInfoDto> list = documentService.getOrganizationDocumentsInfo(organizationId);
+        return OrganizationDocumentsInfoDto.builder()
+                .documents(list).build();
+    }
+
+    @Override
+    public String getDocumentState(final Long documentId) {
+        final UserPrinciple userPrinciple =
+                (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long userId = userPrinciple.getId();
+        final DocumentState state = documentService.get(documentId).getState();
+        if (state.equals(WAITING) || state.equals(PENDING) ) {
+            return (progressDocumentsResponseService.get(userId, documentId) == null
+                    ? state
+                    : JOIN_TO_ME).name();
+        }
+        return documentService.get(documentId).getState().name();
     }
 }

@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static edu.fondue.electronicdocuments.enums.OrganizationRequestState.NO_REQUEST;
+import static edu.fondue.electronicdocuments.enums.OrganizationRequestState.WAITING;
 import static edu.fondue.electronicdocuments.enums.OrganizationType.PUBLIC;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.*;
@@ -52,8 +54,6 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         final Organization organization = OrganizationCreateDto.toOrganization(organizationCreateDto);
         final User owner = userService.getUser(organizationCreateDto.getOwnerUsername());
 
-        storageService.createFolder(format("%s/%s", properties.getOrganizationsDirectory(), organization.getName()));
-
         organization.setOwner(owner);
         organization.getUsers().add(owner);
         owner.getOrganizations().add(organization);
@@ -66,7 +66,8 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         userService.save(owner);
 
         final User user = userService.getUser(owner.getUsername());
-        storageService.createFolder(format("organizations/%s/%d", organization.getName(), user.getId()));
+        storageService.createFolder(format("%s/%d", properties.getOrganizationsDirectory(), newOrgId));
+        storageService.createFolder(format("organizations/%d/%d", newOrgId, user.getId()));
         return newOrgId;
     }
 
@@ -246,15 +247,10 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
     @Override
     public void deleteRole(final Long organizationId, final Long memberId, final Long id) {
         final User user = userService.find(memberId);
-        final Organization organization = organizationService.get(organizationId);
 
         user.getOrganizationRoles().removeIf(role -> role.getId().equals(id));
-        organization.getOrganizationRoles().removeIf(role -> role.getId().equals(id));
 
         userService.save(user);
-        organizationService.save(organization);
-
-        organizationService.deleteOrganizationRole(id);
     }
 
     @Override
@@ -274,7 +270,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         if (organizationAnswerOfferDto.isAnswer()) {
             organization.getUsers().add(user);
             user.getOrganizations().add(organization);
-            storageService.createFolder(format("organizations/%s/%d", organization.getName(), user.getId()));
+            storageService.createFolder(format("organizations/%s/%d", organization.getId(), user.getId()));
 
             user.setOrganizationRoles(organizationService.getDefaultOrganizationRoles(organization));
         }
@@ -296,9 +292,19 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         final Long currentId = userPrinciple.getId();
         final User user = userService.find(currentId);
 
-        return organizationService.getOrganizationsByType(PUBLIC).stream()
+        var list = organizationService.getOrganizationsByType(PUBLIC).stream()
                 .map(organization -> OrganizationInfoDto.fromOrganization(organization, user))
                 .collect(toList());
+        list.forEach(organizationInfoDto -> {
+            if (organizationInfoDto.getSubscribe().equals(NO_REQUEST.name())) {
+                organizationInfoDto.setSubscribe(
+                        (offerService.existsByUserIdAndOrganizationId(currentId, organizationInfoDto.getId())
+                                ? WAITING
+                                : NO_REQUEST).name());
+            }
+        });
+
+        return list;
     }
 
     @Override

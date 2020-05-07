@@ -19,5 +19,5 @@ public class UserDocumentsInfoDto {
 
     private List<DocumentInfoDto> answeredDocuments;
 
-    private List<DocumentInfoDto> joinToMe;
+    private List<DocumentInfoDto> joinToMeDocuments;
 }

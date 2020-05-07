@@ -114,7 +114,7 @@ public class OrganizationController {
     }
 
     @DeleteMapping("{organizationId}/members/{memberId}/roles/{id}")
-    public void addRole(@PathVariable final Long organizationId,
+    public void deleteRole(@PathVariable final Long organizationId,
                         @PathVariable final Long memberId,
                         @PathVariable final Long id) {
         service.deleteRole(organizationId, memberId, id);

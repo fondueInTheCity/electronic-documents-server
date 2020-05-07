@@ -1,6 +1,7 @@
 package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.dto.document.*;
+import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -8,7 +9,7 @@ public interface OrganizationDocumentsService {
 
     void uploadOrganizationFile(Long organizationId, Long userId, MultipartFile file);
 
-    OrganizationDocumentsInfoDto getUserOrganizationDocuments(Long organizationId, Long userId);
+    MyOrganizationDocumentsInfoDto getUserOrganizationDocuments(Long organizationId, Long userId);
 
     OrganizationDocumentViewDto getOrganizationDocumentView(Long documentId);
 
@@ -33,4 +34,12 @@ public interface OrganizationDocumentsService {
     void answerDocument(Long documentId, DocumentAnswerDto answer);
 
     String getMediaType(Long documentId);
+
+    PendingDocumentViewDto getPendingDocument(Long documentId);
+
+    AnsweredDocumentViewDto getAnsweredDocument(Long documentId);
+
+    OrganizationDocumentsInfoDto getOrganizationDocumentsInfo(Long organizationId);
+
+    String getDocumentState(Long documentId);
 }

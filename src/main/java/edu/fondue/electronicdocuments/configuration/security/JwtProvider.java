@@ -77,6 +77,15 @@ public class JwtProvider {
                 .token(token).build();
     }
 
+    public String generateJwtToken(final String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + jwtExpiration))
+                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .compact();
+    }
+
     public String getSubject(final String token) {
         return Jwts.parser()
                 .setSigningKey(jwtSecret)

@@ -2,7 +2,6 @@ package edu.fondue.electronicdocuments.models;
 
 import edu.fondue.electronicdocuments.enums.OrganizationType;
 import lombok.*;
-import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 import java.util.List;
@@ -22,7 +21,6 @@ public class Organization {
     @Column(name = "id")
     private Long id;
 
-    @NaturalId
     @Column(name = "name")
     private String name;
 

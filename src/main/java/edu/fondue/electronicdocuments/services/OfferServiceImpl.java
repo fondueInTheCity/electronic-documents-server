@@ -36,4 +36,9 @@ public class OfferServiceImpl implements OfferService {
     public void delete(final Offer offer) {
         repository.delete(offer);
     }
+
+    @Override
+    public boolean existsByUserIdAndOrganizationId(final Long currentId, final Long id) {
+        return repository.existsByUserIdAndOrganizationId(currentId, id);
+    }
 }

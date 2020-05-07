@@ -2,17 +2,18 @@ package edu.fondue.electronicdocuments.services;
 
 import edu.fondue.electronicdocuments.dto.document.ChangeDocumentStateDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentAnswerDto;
+import edu.fondue.electronicdocuments.dto.document.DocumentInfoDto;
 import edu.fondue.electronicdocuments.dto.document.HeapDocumentViewDto;
-import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
+import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.models.Document;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface DocumentService {
-    void uploadOrganizationFile(String organizationName, Long organizationId, Long userId, MultipartFile file);
+    void uploadOrganizationFile(Long organizationId, Long userId, MultipartFile file);
 
-    OrganizationDocumentsInfoDto getUserOrganizationDocuments(Long organizationId, Long userId);
+    MyOrganizationDocumentsInfoDto getUserOrganizationDocuments(Long organizationId, Long userId);
 
     Document get(Long documentId);
 
@@ -27,4 +28,6 @@ public interface DocumentService {
     HeapDocumentViewDto getHeapDocument(Long documentId);
 
     void save(Document document);
+
+    List<DocumentInfoDto> getOrganizationDocumentsInfo(Long organizationId);
 }

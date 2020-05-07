@@ -41,7 +41,7 @@ public class StorageServiceImpl implements StorageService {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-        session.read(format("%s%s", properties.getDirectory(), path), outputStream);
+        session.read(path, outputStream);
         return outputStream.toByteArray();
     }
 
@@ -51,5 +51,13 @@ public class StorageServiceImpl implements StorageService {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
 
         session.mkdir(format("%s/%s", properties.getDirectory(), path));
+    }
+
+    @SneakyThrows
+    @Override
+    public void renameFile(final String pathFrom, final String pathTo) {
+        final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
+
+        session.rename(pathFrom, pathTo);
     }
 }

@@ -1,7 +1,7 @@
 package edu.fondue.electronicdocuments.models;
 
+import edu.fondue.electronicdocuments.utils.annotations.Encrypted;
 import lombok.*;
-import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
@@ -32,34 +32,33 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Encrypted
     @Column(name = "first_name")
     private String firstName;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Encrypted
     @Column(name = "middle_name")
     private String middleName;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Encrypted
     @Column(name = "last_name")
     private String lastName;
 
     @NotBlank
-    @Size(min = 3, max = 50)
+    @Encrypted
     @Column(name = "username")
     private String username;
 
-    @NaturalId
     @NotBlank
+    @Encrypted
     @Size(max = 255)
     @Email
     @Column(name = "email")
     private String email;
 
     @NotBlank
-    @Size(max = 60)
     @Column(name = "password", columnDefinition = "CHAR(60)")
     private String password;
 

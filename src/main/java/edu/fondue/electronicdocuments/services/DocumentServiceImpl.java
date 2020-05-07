@@ -4,7 +4,7 @@ import edu.fondue.electronicdocuments.dto.document.ChangeDocumentStateDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentAnswerDto;
 import edu.fondue.electronicdocuments.dto.document.DocumentInfoDto;
 import edu.fondue.electronicdocuments.dto.document.HeapDocumentViewDto;
-import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
+import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.models.Document;
 import edu.fondue.electronicdocuments.repositories.DocumentRepository;
 import edu.fondue.electronicdocuments.utils.Properties;
@@ -19,8 +19,7 @@ import java.util.Map;
 
 import static edu.fondue.electronicdocuments.enums.DocumentState.*;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +34,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final Properties properties;
 
     @Override
-    public void uploadOrganizationFile(final String organizationName, final Long organizationId, final Long userId,
-                                       final MultipartFile file) {
-        final String uploadPath = format("%s/%s/%d", properties.getOrganizationsDirectory(), organizationName, userId);
+    public void uploadOrganizationFile(final Long organizationId, final Long userId, final MultipartFile file) {
+        final String uploadPath = format("%s/%d/%d", properties.getOrganizationsDirectory(), organizationId, userId);
 
         storageService.upload(uploadPath, file);
 
@@ -52,16 +50,17 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public OrganizationDocumentsInfoDto getUserOrganizationDocuments(final Long organizationId, final Long userId) {
+    public MyOrganizationDocumentsInfoDto getUserOrganizationDocuments(final Long organizationId, final Long userId) {
         final List<Document> documents = repository.findAllByOrganizationIdAndOwnerId(organizationId, userId);
         final Map<String, List<DocumentInfoDto>> map = documents.stream()
                 .map(DocumentInfoDto::fromDocument)
                 .collect(groupingBy(DocumentInfoDto::getDocumentState, HashMap::new, toCollection(ArrayList::new)));
 
-        return OrganizationDocumentsInfoDto.builder()
+        return MyOrganizationDocumentsInfoDto.builder()
                 .heapDocuments(map.get(HEAP.name()))
                 .waitingDocuments(map.get(WAITING.name()))
                 .progressDocuments(map.get(PENDING.name()))
+                .joinToMeDocuments(map.get(JOIN_TO_ME.name()))
                 .answeredDocuments(map.get(ANSWERED.name())).build();
     }
 
@@ -108,5 +107,12 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public void save(final Document document) {
         repository.save(document);
+    }
+
+    @Override
+    public List<DocumentInfoDto> getOrganizationDocumentsInfo(final Long organizationId) {
+        return repository.findAllByOrganizationIdAndAnswer(organizationId, true).stream()
+                .map(DocumentInfoDto::fromDocument)
+                .collect(toList());
     }
 }

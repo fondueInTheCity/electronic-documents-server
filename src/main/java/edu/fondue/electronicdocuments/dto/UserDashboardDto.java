@@ -37,7 +37,6 @@ public class UserDashboardDto {
         user.setFirstName(userDashboardDto.getFirstName());
         user.setMiddleName(userDashboardDto.getMiddleName());
         user.setLastName(userDashboardDto.getLastName());
-//        user.setPublicInfo(userDashboardDto.getPublicInfo());
         user.setEmail(userDashboardDto.getEmail());
     }
 }

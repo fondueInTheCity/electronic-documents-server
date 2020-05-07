@@ -14,4 +14,6 @@ public interface OfferService {
     Offer get(Long id);
 
     void delete(Offer offer);
+
+    boolean existsByUserIdAndOrganizationId(Long currentId, Long id);
 }

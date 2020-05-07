@@ -1,11 +1,11 @@
 package edu.fondue.electronicdocuments.controllers;
 
 import edu.fondue.electronicdocuments.dto.document.*;
+import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.services.OrganizationDocumentsService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +27,8 @@ public class DocumentController {
     }
 
     @GetMapping("organization/{organizationId}/user/{userId}")
-    public OrganizationDocumentsInfoDto uploadOrganizationFile(@PathVariable final Long organizationId,
-                                                               @PathVariable final Long userId) {
+    public MyOrganizationDocumentsInfoDto getUserOrganizationDocuments(@PathVariable final Long organizationId,
+                                                                       @PathVariable final Long userId) {
         return service.getUserOrganizationDocuments(organizationId, userId);
     }
 
@@ -83,15 +83,33 @@ public class DocumentController {
     @SneakyThrows
     @PostMapping("{documentId}/join-to-me/download")
     public ResponseEntity<byte[]> downloadDocumentForCheck(@PathVariable Long documentId) {
-
-        ClassPathResource pdfFile = new ClassPathResource("Functional_Programming,_Simplified_Scala_edition_by_Alvin_Alexander.pdf");
-
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).contentLength(pdfFile.contentLength()).body(pdfFile.getInputStream().readAllBytes());
+        final byte[] blob = service.download(documentId);
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).contentLength(blob.length).body(blob);
     }
 
     @PostMapping("{documentId}/join-to-me/answer")
     public void answerDocument(@PathVariable final Long documentId,
                                @RequestBody final DocumentAnswerDto answer) {
         service.answerDocument(documentId, answer);
+    }
+
+    @GetMapping("{documentId}/progress")
+    public PendingDocumentViewDto getPendingDocument(@PathVariable Long documentId) {
+        return service.getPendingDocument(documentId);
+    }
+
+    @GetMapping("{documentId}/answered")
+    public AnsweredDocumentViewDto getAnsweredDocument(@PathVariable Long documentId) {
+        return service.getAnsweredDocument(documentId);
+    }
+
+    @GetMapping("organization/{organizationId}")
+    public OrganizationDocumentsInfoDto getOrganizationDocumentsInfo(@PathVariable final Long organizationId) {
+        return service.getOrganizationDocumentsInfo(organizationId);
+    }
+
+    @GetMapping("{documentId}/state")
+    public String getDocumentState(@PathVariable final Long documentId) {
+        return service.getDocumentState(documentId);
     }
 }
