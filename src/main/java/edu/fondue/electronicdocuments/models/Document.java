@@ -1,6 +1,7 @@
 package edu.fondue.electronicdocuments.models;
 
 import edu.fondue.electronicdocuments.enums.DocumentState;
+import edu.fondue.electronicdocuments.utils.annotations.Encrypted;
 import lombok.*;
 
 import javax.persistence.*;
@@ -20,6 +21,7 @@ public class Document {
     private Long id;
 
     @Column(name = "path")
+    @Encrypted
     private String path;
 
     @Column(name = "organization_id")

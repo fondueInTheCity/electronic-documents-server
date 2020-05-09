@@ -39,15 +39,18 @@ public class AuthServiceImpl implements AuthService {
 
     private final StorageService storageService;
 
+    private final ImageService imageService;
+
     @Override
     public ResponseEntity<?> authenticate(final SignInDto request) {
 
+        final User user = userService.getUser(request.getUsername());
+
         final Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        final User user = userService.getUser(request.getUsername());
         final List<Long> list = user.getOwnerOrganization().stream()
                 .map(Organization::getId)
                 .collect(toList());
@@ -79,9 +82,12 @@ public class AuthServiceImpl implements AuthService {
                 .password(encoder.encode(request.getPassword()))
                 .roles(new HashSet<>()).build();
 
-        userService.save(user);
+        final Long curId = userService.save(user);
 
         storageService.createFolder(format("%s/%d", properties.getUsersDirectory(), user.getId()));
+
+        imageService.saveSignaturePng(curId, format("%s %s.%s.", user.getLastName(),
+                user.getFirstName().charAt(0), user.getMiddleName().charAt(0)));
 
         return ResponseEntity.ok().body("User registered successfully!");
     }

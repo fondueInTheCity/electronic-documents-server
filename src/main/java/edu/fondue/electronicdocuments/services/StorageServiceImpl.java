@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
@@ -37,6 +38,15 @@ public class StorageServiceImpl implements StorageService {
 
     @SneakyThrows
     @Override
+    public void upload(final String path, final InputStream is, final String name) {
+        final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
+
+        session.write(is, format("%s%s/%s", properties.getDirectory(), path, name));
+        session.close();
+    }
+
+    @SneakyThrows
+    @Override
     public byte[] download(final String path) {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -59,5 +69,28 @@ public class StorageServiceImpl implements StorageService {
         final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
 
         session.rename(pathFrom, pathTo);
+        session.close();
+    }
+
+    @Override
+    @SneakyThrows
+    public void change(String path, InputStream is) {
+        final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
+
+        session.remove(path);
+        session.write(is, path);
+        session.close();
+    }
+
+    @Override
+    @SneakyThrows
+    public void uploadSignaturePng(final byte[] imgSource, final Long userId, final String imgName) {
+        final SftpSession session = sftpSessionFactoryHandler.gimmeFactory().getSession();
+        final String path = format("electronic-documents/users/%d/%s", userId, imgName);
+
+        if (session.exists(path)) {
+            session.remove(path);
+        }
+        session.write(new ByteArrayInputStream(imgSource), path);
     }
 }

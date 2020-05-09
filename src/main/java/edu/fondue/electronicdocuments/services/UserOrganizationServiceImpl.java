@@ -11,14 +11,15 @@ import edu.fondue.electronicdocuments.models.OrganizationRole;
 import edu.fondue.electronicdocuments.models.User;
 import edu.fondue.electronicdocuments.utils.Properties;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.json.JSONObject;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.*;
 
 import static edu.fondue.electronicdocuments.enums.OrganizationRequestState.NO_REQUEST;
 import static edu.fondue.electronicdocuments.enums.OrganizationRequestState.WAITING;
@@ -50,6 +51,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     @Transactional
+    @SneakyThrows
     public Long createOrganization(final OrganizationCreateDto organizationCreateDto) {
         final Organization organization = OrganizationCreateDto.toOrganization(organizationCreateDto);
         final User owner = userService.getUser(organizationCreateDto.getOwnerUsername());
@@ -66,8 +68,12 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         userService.save(owner);
 
         final User user = userService.getUser(owner.getUsername());
-        storageService.createFolder(format("%s/%d", properties.getOrganizationsDirectory(), newOrgId));
-        storageService.createFolder(format("organizations/%d/%d", newOrgId, user.getId()));
+        final String organizationPath = format("%s/%d", properties.getOrganizationsDirectory(), newOrgId);
+        storageService.createFolder(organizationPath);
+        storageService.createFolder(format("%s/%d", organizationPath, user.getId()));
+        final String defaultAvatar = format("%s/default_avatar.jpg", properties.getLocalStorageOutput());
+        final InputStream inputStream = new FileInputStream(defaultAvatar);
+        storageService.upload(organizationPath, inputStream, "avatar.jpg");
         return newOrgId;
     }
 
@@ -98,6 +104,11 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     public List<OrganizationInfoDto> getOrganizations(final String username) {
+        //        list.forEach(organizationInfoDto -> {
+//            final String path = format("electronic-documents/organizations/%d/avatar.jpg", organizationInfoDto.getId());
+//            final byte[] img = storageService.download(path);
+//            organizationInfoDto.setAvatar(Base64.getEncoder().encodeToString(img));
+//        });
         return userService.getOrganizations(username);
     }
 
@@ -211,7 +222,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     public UserRequestsViewDto getRequests(final String username) {
-        var map = userService.getUser(username).getOffers().stream()
+        Map<String, ArrayList<OrganizationOfferDto>> map = userService.getUser(username).getOffers().stream()
                 .map(offer -> OrganizationOfferDto.fromOffer(offer, true))
                 .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
         return UserRequestsViewDto.createFormMap(map);
@@ -255,7 +266,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
 
     @Override
     public OrganizationRequestsView getOffers(final Long organizationId) {
-        var map = organizationService.get(organizationId).getOffers().stream()
+        Map<String, ArrayList<OrganizationOfferDto>> map = organizationService.get(organizationId).getOffers().stream()
                 .map(offer -> OrganizationOfferDto.fromOffer(offer, false))
                 .collect(groupingBy(OrganizationOfferDto::getType, HashMap::new, toCollection(ArrayList::new)));
         return OrganizationRequestsView.createFormMap(map);
@@ -292,7 +303,7 @@ public class UserOrganizationServiceImpl implements UserOrganizationService {
         final Long currentId = userPrinciple.getId();
         final User user = userService.find(currentId);
 
-        var list = organizationService.getOrganizationsByType(PUBLIC).stream()
+        List<OrganizationInfoDto> list = organizationService.getOrganizationsByType(PUBLIC).stream()
                 .map(organization -> OrganizationInfoDto.fromOrganization(organization, user))
                 .collect(toList());
         list.forEach(organizationInfoDto -> {

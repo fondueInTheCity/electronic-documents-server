@@ -6,6 +6,7 @@ import edu.fondue.electronicdocuments.dto.document.*;
 import edu.fondue.electronicdocuments.dto.organization.MyOrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationDocumentsInfoDto;
 import edu.fondue.electronicdocuments.dto.organization.OrganizationRoleInfoDto;
+import edu.fondue.electronicdocuments.enums.DocumentAnswer;
 import edu.fondue.electronicdocuments.enums.DocumentState;
 import edu.fondue.electronicdocuments.models.*;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,8 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
     private final UserService userService;
 
     private final StorageService storageService;
+
+    private final CryptoService cryptoService;
 
     @Override
     @Transactional
@@ -156,6 +159,9 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
         document.setPath(pathTo);
         document.setName(heapDocumentViewDto.getName());
         documentService.save(document);
+
+        cryptoService.addSignatureToPdf(document.getPath(), document.getOwnerId(), document.getName(),
+                "Send for approve");
     }
 
     @Override
@@ -194,18 +200,21 @@ public class OrganizationDocumentsServiceImpl implements OrganizationDocumentsSe
         final UserPrinciple userPrinciple =
                 (UserPrinciple) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        final Document document = documentService.get(documentId);
+        final DocumentAnswer documentAnswer = answer.getAnswer() ? APPROVE : DENY;
+        cryptoService.addSignatureToPdf(document.getPath(), userPrinciple.getId(), document.getName(),
+                documentAnswer.name());
+
         final ProgressDocumentsResponse progressDocumentsResponse =
                 progressDocumentsResponseService.get(userPrinciple.getId(), documentId);
-        progressDocumentsResponse.setAnswer(answer.getAnswer()
-                ? APPROVE
-                : DENY);
+        progressDocumentsResponse.setAnswer(documentAnswer);
         progressDocumentsResponseService.save(progressDocumentsResponse);
+
         final List<ProgressDocumentsResponse> list = progressDocumentsResponseService.getAllByDocumentId(documentId);
         boolean inProgress = list.stream()
                 .map(ProgressDocumentsResponse::getAnswer)
                 .anyMatch(answer1 -> answer1.equals(NOT_ANSWER));
         if (!inProgress) {
-            final Document document = documentService.get(documentId);
             document.setState(ANSWERED);
             document.setAnswer(true);
             this.documentService.save(document);

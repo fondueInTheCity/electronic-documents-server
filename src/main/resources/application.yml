@@ -19,6 +19,9 @@ t:
     jwtSecret: secret
     jwtExpiration: 1000000000
     localStorage: C:\storage
+    localStorageInput: C:\storage\input\
+    localStorageOutput: C:\storage\output\
+    localStorageKeys: C:\storage\keys\
   sftp:
     host: 127.0.0.1
     user: foo

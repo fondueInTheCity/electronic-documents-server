@@ -12,7 +12,7 @@ public interface UserService {
 
     boolean existsByEmail(String email);
 
-    void save(User user);
+    Long save(User user);
 
     UserDashboardDto getDashboard(String username);
 

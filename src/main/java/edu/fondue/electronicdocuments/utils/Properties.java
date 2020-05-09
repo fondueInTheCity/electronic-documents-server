@@ -34,4 +34,13 @@ public class Properties {
 
     @Value("${t.app.localStorage}")
     private String localStorage;
+
+    @Value("${t.app.localStorageInput}")
+    private String localStorageInput;
+
+    @Value("${t.app.localStorageOutput}")
+    private String localStorageOutput;
+
+    @Value("${t.app.localStorageKeys}")
+    private String localStorageKeys;
 }

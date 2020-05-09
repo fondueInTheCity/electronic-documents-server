@@ -47,7 +47,6 @@ public class User {
     private String lastName;
 
     @NotBlank
-    @Encrypted
     @Column(name = "username")
     private String username;
 

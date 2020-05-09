@@ -24,6 +24,8 @@ public class OrganizationInfoDto {
 
     private String subscribe;
 
+    private String avatar;
+
     public static OrganizationInfoDto fromOrganization(final Organization organization, final User user) {
         return OrganizationInfoDto.builder()
                 .id(organization.getId())

@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum NotificationType {
     ADD_ROLE("Go to your organization profile."),
-    DELETE_ROLE("Go to your organization profile.");
+    DELETE_ROLE("Go to your organization profile."),
+    ADD_ORGANIZATION("Go to your organization profile.");
 
     private String linkText;
 
